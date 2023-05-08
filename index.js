@@ -1,25 +1,50 @@
-import axios from "axios";
+import fs from "node:fs";
+import path from "node:path";
 
-axios
-  .request({
-    method: "get",
-    url: "https://api-takumi.mihoyo.com/binding/api/getUserGameRolesByCookie?game_biz=hk4e_cn",
-    headers: {
-      "accept-language":
-        "zh-CN,zh;q=0.9,ja-JP;q=0.8,ja;q=0.7,en-US;q=0.6,en;q=0.5",
-      "User-Agent":
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) miHoYoBBS/2.3.0",
-      Referer:
-        "https://webstatic.mihoyo.com/bbs/event/signin-ys/index.html?bbs_auth_required=true&act_id=e202009291139501&utm_source=bbs&utm_medium=mys&utm_campaign=icon",
-      Host: "api-takumi.mihoyo.com",
-      "x-rpc-channel": "appstore",
-      "x-rpc-app_version": "2.3.0",
-      "x-requested-with": "com.mihoyo.hyperion",
-      "x-rpc-client_type": "5",
+const arr = [];
+const fileDisplay = async (filePath) => {
+  //根据文件路径读取文件，返回文件列表
+  const files = fs.readdirSync(filePath);
 
-      "Content-Type": "application/json;charset=UTF-8",
-    },
-  })
-  .then((res) => {
-    console.log("res :>> ", res);
+  files.forEach((filename) => {
+    //获取当前文件的绝对路径
+    const filedir = path.join(filePath, filename);
+    // fs.stat(path)执行后，会将stats类的实例返回给其回调函数。
+
+    const stats = fs.statSync(filedir);
+
+    // 是否是文件
+    const isFile = stats.isFile();
+    // 是否是文件夹
+    const isDir = stats.isDirectory();
+    if (isFile) {
+      // 这块我自己处理了多余的绝对路径，第一个 replace 是替换掉那个路径，第二个是所有满足\\的直接替换掉
+      arr.push(
+        filedir
+          .replace("D:\\lh\\study\\jiaoshoujia\\vue\\generator-lh-vue\\generators\\app\\", "")
+          .replace(/\\/gim, "/")
+      );
+      // 最后打印的就是完整的文件路径了
+      console.log("arr", arr);
+    }
+    // 如果是文件夹
+    if (isDir) fileDisplay(filedir);
   });
+};
+
+fileDisplay("script");
+
+const pathResolve = (dir) => path.resolve(process.cwd(), ".", dir);
+
+arr.forEach((each) => {
+  const path = pathResolve(each);
+  try {
+    import(`file://${path}`).then((res) => {
+      console.log("res :>> ", res.default);
+    });
+  } catch {
+    import(`${path}`).then((res) => {
+      console.log("res :>> ", res.default);
+    });
+  }
+});
